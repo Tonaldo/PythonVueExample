@@ -4,7 +4,7 @@
 
 1. Clone
 
-1. Run the client-side Vue app in one terminal window:
+1. Run the Vue app in one terminal window:
 
     ```sh
     $ cd client

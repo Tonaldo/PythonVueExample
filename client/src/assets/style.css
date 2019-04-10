@@ -1,0 +1,25 @@
+img {
+width: 550px;
+ height: 550px;
+}
+
+@media screen and (max-width: 600px) and (min-width: 320px) {
+img {
+width: 100vw;
+ height: 350px;
+}
+.VueCarousel {
+	    text-align: center;
+    margin-left: -19px;
+    width: 100vw;
+}
+
+h1 {
+	    text-align: center;
+}
+
+}
+
+.btn-sm {
+	    min-width: 64px;
+}

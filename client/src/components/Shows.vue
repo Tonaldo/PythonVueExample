@@ -6,8 +6,11 @@
         <hr><br><br>
         <alert :message=message v-if="showMessage"></alert>
         <button type="button" class="btn btn-success btn-sm" v-b-modal.show-modal>Add TV show</button>
+
+        <button type="button" class="btn btn-info btn-sm" @click="changeView()">List/poster mode</button>
+        <button v-if="!watchlist" type="button" class="btn btn-primary float-right btn-sm" @click="toggleWatchlist()">{{ !this.watchList ? 'Show watchlist' : 'Show all my shows' }}</button>
         <br><br>
-        <table class="table table-hover">
+        <table  v-if="listMode  && !watchlist " class="table table-hover">
           <thead>
             <tr>
               <th @click="sortBy('title')" :style="{ 'cursor': 'pointer' }" scope="col">Title <span v-if="sortOrder === 'asc' && sortKey === 'title'"> <font-awesome-icon  icon="chevron-down" /></span> <span v-if="sortOrder === 'desc' && sortKey === 'title'"> <font-awesome-icon  icon="chevron-up" /></span> </th>
@@ -17,7 +20,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(show, index) in showsSorted" :key="index">
+            <tr  v-for="(show, index) in showsSorted" :key="index">
               <td>{{ show.title }}</td>
               <td>{{ show.year }}</td>
               <td>
@@ -38,10 +41,32 @@
                         @click="onDeleteShow(show)">
                     Delete
                 </button>
+
+                   <button v-if="!show.watchlist"
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        @click="onAddWatchlistShow(show)">
+                    Watchlist
+                </button>
+                     <button v-if="show.watchlist"
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        @click="onWatchlistDelete(show)">
+                    Remove from watchlist
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
+
+        <carousel v-if="!listMode && !watchlist"  :scrollPerPage=true :perPage=1 :centerMode=true  :style="{'text-align': 'center'}">
+  <slide v-for="(show, index) in showsSorted ">
+
+     <img :src="show.posterImg" :key="index"/>
+
+  </slide>
+</carousel>
+
       </div>
     </div>
     <b-modal ref="addShowModal"
@@ -69,10 +94,24 @@
                           placeholder="Enter year">
             </b-form-input>
           </b-form-group>
+
+                <b-form-group id="form-year-edit-group"
+                      label="Poster image url:"
+                      label-for="form-year-edit-input">
+            <b-form-input id="form-year-edit-input"
+                          type="text"
+                          v-model="addShowForm.posterImg"
+                          required
+                          placeholder="Enter poster image URL">
+            </b-form-input>
+          </b-form-group>
         <b-form-group id="form-watched-group">
           <b-form-checkbox-group v-model="addShowForm.watched" id="form-checks">
             <b-form-checkbox value="true">Watched?</b-form-checkbox>
           </b-form-checkbox-group>
+              <b-form-checkbox-group v-model="addShowForm.watchlist" id="form-checks">
+               <b-form-checkbox value="true">Add to watchlist?</b-form-checkbox>
+             </b-form-checkbox-group>
         </b-form-group>
         <b-button type="submit" variant="primary">Submit</b-button>
         <b-button type="reset" variant="danger">Reset</b-button>
@@ -103,6 +142,16 @@
                           placeholder="Enter year">
             </b-form-input>
           </b-form-group>
+               <b-form-group id="form-year-edit-group"
+                      label="Poster image url:"
+                      label-for="form-year-edit-input">
+            <b-form-input id="form-year-edit-input"
+                          type="text"
+                          v-model="editForm.posterImg"
+                          required
+                          placeholder="Enter poster image URL">
+            </b-form-input>
+          </b-form-group>
         <b-form-group id="form-watched-edit-group">
           <b-form-checkbox-group v-model="editForm.watched" id="form-checks">
             <b-form-checkbox value="true">Watched?</b-form-checkbox>
@@ -118,24 +167,34 @@
 <script>
 import axios from 'axios';
 import Alert from './Alert';
+import { Carousel, Slide } from 'vue-carousel';
 import _ from 'lodash';
 
 export default {
   data() {
     return {
       shows: [],
+      allShows: [],
+      watchListShows: [],
+      listMode: true,
+      watchList: false,
       sortKey: 'title',
       sortOrder: 'asc',
+      filter: '',
       addShowForm: {
         title: '',
         year: '',
+        posterImg: '',
         watched: [],
+        watchlist: []
       },
       editForm: {
         id: '',
         title: '',
         year: '',
+        posterImg: '',
         watched: [],
+        watchlist: []
       },
       message: '',
       showMessage: false,
@@ -143,12 +202,23 @@ export default {
   },
   components: {
     alert: Alert,
+    Carousel,
+    Slide
   },
+  
   computed: {
-    showsSorted: function() {
-      console.log(this.sortKey)
-        return _.orderBy(this.shows, this.sortKey, this.sortOrder);
-    },
+ 
+ showsSorted: function() {
+     if(this.watchList === true) {
+      this.watchListShows = this.shows.filter((show) => show.watchlist === true)
+      return _.orderBy(this.watchListShows, this.sortKey, this.sortOrder);
+    }
+    else {
+      return _.orderBy(this.allShows, this.sortKey, this.sortOrder);
+    
+    }
+   
+}
 },
 
   methods: {
@@ -162,12 +232,18 @@ export default {
         }
    },
 
+   changeView: function() {
+    this.listMode = !this.listMode
+   },
+   toggleWatchlist: function() {
+    this.watchList = !this.watchList
+   },
+
     getShows() {
-      const path = 'http://localhost:5000/shows';
+      const path = 'https://pythonvueapi.herokuapp.com/shows';
       axios.get(path)
         .then((res) => {
-          this.shows = res.data.shows;
-          console.log(this.shows)
+          this.shows = this.allShows = res.data.shows;  
         })
         .catch((error) => {
           // eslint-disable-next-line
@@ -175,7 +251,8 @@ export default {
         });
     },
     addShow(payload) {
-      const path = 'http://localhost:5000/shows';
+      payload.id = Math.random().toString(36).substr(2, 5);
+      const path = 'https://pythonvueapi.herokuapp.com/shows';
       axios.post(path, payload)
         .then(() => {
           this.getShows();
@@ -189,7 +266,7 @@ export default {
         });
     },
     updateShow(payload, showID) {
-      const path = `http://localhost:5000/shows/${showID}`;
+      const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
       axios.put(path, payload)
         .then(() => {
           this.getShows();
@@ -203,7 +280,7 @@ export default {
         });
     },
     removeShow(showID) {
-      const path = `http://localhost:5000/shows/${showID}`;
+      const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
       axios.delete(path)
         .then(() => {
           this.getShows();
@@ -216,24 +293,68 @@ export default {
           this.getShows();
         });
     },
+
+    AddWatchlistShow(showID) {
+      const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
+      let payload = {};
+      payload.watchlist = true;
+      axios.put(path, payload)
+        .then(() => {
+          this.getShows();
+          this.message = 'Show added to watchlist!';
+          this.showMessage = true;
+        })
+        .catch((error) => {
+          // eslint-disable-next-line
+          console.error(error);
+          this.getShows();
+        }); 
+    },
+
+      RemoveWatchlistShow(showID) {
+       const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
+       let payload = {};
+       payload.watchlist = false;
+       axios.put(path, payload)
+        .then(() => {
+          this.getShows();
+          this.message = 'Show removed from watchlist!';
+          this.showMessage = true;
+        })
+        .catch((error) => {
+          // eslint-disable-next-line
+          console.error(error);
+          this.getShows();
+        }); 
+    },
     initForm() {
       this.addShowForm.title = '';
       this.addShowForm.year = '';
+      this.addShowForm.posterImg = '';
       this.addShowForm.watched = [];
+      this.addShowForm.watchlist = [];
       this.editForm.id = '';
       this.editForm.title = '';
       this.editForm.year = '';
+      this.editForm.posterImg = '';
       this.editForm.watched = [];
+      this.editForm.watchlist = [];
+      this.editForm.watchlist = [];
+
     },
     onSubmit(evt) {
       evt.preventDefault();
       this.$refs.addShowModal.hide();
       let watched = false;
+      let watchlist = false;
       if (this.addShowForm.watched[0]) watched = true;
+      if (this.addShowForm.watchlist[0]) watchlist = true;
       const payload = {
         title: this.addShowForm.title,
         year: this.addShowForm.year,
-        watched, // property shorthand
+        posterImg: this.addShowForm.posterImg,
+        watched,
+        watchlist, // property shorthand
       };
       this.addShow(payload);
       this.initForm();
@@ -263,6 +384,12 @@ export default {
     },
     onDeleteShow(show) {
       this.removeShow(show.id);
+    },
+    onWatchlistDelete(show) {
+      this.RemoveWatchlistShow(show.id);
+    },
+    onAddWatchlistShow(show) {
+      this.AddWatchlistShow(show.id);
     },
     editShow(show) {
       this.editForm = show;

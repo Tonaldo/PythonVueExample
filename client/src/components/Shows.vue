@@ -8,9 +8,9 @@
         <button type="button" class="btn btn-success btn-sm" v-b-modal.show-modal>Add TV show</button>
 
         <button type="button" class="btn btn-info btn-sm" @click="changeView()">List/poster mode</button>
-        <button v-if="!watchlist" type="button" class="btn btn-primary float-right btn-sm " @click="toggleWatchlist()">{{ !this.watchList ? 'Show watchlist' : 'Show all my shows' }}</button>
+        <button  type="button" class="btn btn-primary float-right btn-sm " @click="toggleWatchlist()">{{ !this.watchList ? 'Show watchlist' : 'Show all my shows' }}</button>
         <br><br>
-        <table  v-if="listMode  && !watchlist " class="table table-hover">
+        <table  v-if="listMode " class="table table-hover">
           <thead>
             <tr>
               <th @click="sortBy('title')" :style="{ 'cursor': 'pointer' }" scope="col">Title <span v-if="sortOrder === 'asc' && sortKey === 'title'"> <font-awesome-icon  icon="chevron-down" /></span> <span v-if="sortOrder === 'desc' && sortKey === 'title'"> <font-awesome-icon  icon="chevron-up" /></span> </th>
@@ -62,7 +62,7 @@
         <carousel v-if="!listMode && !watchlist"  :scrollPerPage=true :perPage=1 :centerMode=true  :style="{'text-align': 'center'}">
   <slide v-for="(show, index) in showsSorted ">
 
-     <img :src="show.posterImg" :key="index"/>
+     <img  @error="replace404"  :src="show.posterImg" :key="index"/>
 
   </slide>
 </carousel>
@@ -81,6 +81,7 @@
                         type="text"
                         v-model="addShowForm.title"
                         required
+                        trim
                         placeholder="Enter title">
           </b-form-input>
         </b-form-group>
@@ -88,7 +89,9 @@
                       label="Year:"
                       label-for="form-year-input">
             <b-form-input id="form-year-input"
-                          type="text"
+                          type="number"
+                          min="1920"
+                          max="2019"
                           v-model="addShowForm.year"
                           required
                           placeholder="Enter year">
@@ -98,7 +101,7 @@
                 <b-form-group id="form-year-edit-group"
                       label="Poster image url:"
                       label-for="form-year-edit-input">
-            <b-form-input id="form-year-edit-input"
+            <b-form-input id="form-posterImg-edit-input"
                           type="text"
                           v-model="addShowForm.posterImg"
                           required
@@ -113,7 +116,7 @@
                <b-form-checkbox value="true">Add to watchlist?</b-form-checkbox>
              </b-form-checkbox-group>
         </b-form-group>
-        <b-button type="submit" variant="primary">Submit</b-button>
+        <b-button type="submit" :disabled="errors.any()" variant="primary">Submit</b-button>
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
@@ -137,6 +140,7 @@
                       label-for="form-year-edit-input">
             <b-form-input id="form-year-edit-input"
                           type="text"
+                          name="year"
                           v-model="editForm.year"
                           required
                           placeholder="Enter year">
@@ -167,6 +171,7 @@
 <script>
 import axios from 'axios';
 import Alert from './Alert';
+import VeeValidate from 'vee-validate'
 import { Carousel, Slide } from 'vue-carousel';
 import _ from 'lodash';
 
@@ -198,6 +203,8 @@ export default {
       },
       message: '',
       showMessage: false,
+       errorImg: require("../assets/404img.png")
+            
     };
   },
   components: {
@@ -222,6 +229,14 @@ export default {
 
   methods: {
 
+    isNumber: function(n) {
+      return !isNaN(parseFloat(n)) && isFinite(n);
+    },
+
+    replace404(e) {
+      e.target.src = this.errorImg
+    },
+
     sortBy: function(key) {
       if (key == this.sortKey) {
         this.sortOrder = (this.sortOrder == 'asc') ? 'desc' : 'asc';
@@ -230,6 +245,15 @@ export default {
         this.sortOrder = 'asc';
       }
      },
+
+     validateState(ref) {
+      console.log(this.veeFields[ref])
+      console.log("yaas!")
+        if (this.veeFields[ref] && (this.veeFields[ref].dirty || this.veeFields[ref].validated)) {
+          return !this.errors.has(ref)
+        }
+        return null
+      },
 
     changeView: function() {
       this.listMode = !this.listMode
@@ -338,7 +362,6 @@ export default {
       this.editForm.year = '';
       this.editForm.posterImg = '';
       this.editForm.watched = [];
-      this.editForm.watchlist = [];
       this.editForm.watchlist = [];
     },
     onSubmit(evt) {

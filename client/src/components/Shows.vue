@@ -4,7 +4,7 @@
       <div class="col-sm-10">
         <h1>📺TV SHOWS📺</h1>
         <hr><br><br>
-        <alert :message=message v-if="showMessage"></alert>
+        <alert :message=message :showMessage.sync=showMessage v-if="showMessage"></alert>
         <button type="button" class="btn btn-success btn-sm" v-b-modal.show-modal>Add TV show</button>
 
         <button type="button" class="btn btn-info btn-sm" @click="changeView()">List/poster mode</button>
@@ -394,7 +394,7 @@ export default {
       this.editForm = show;
     },
   },
-  
+
   created() {
     this.getShows();
   },

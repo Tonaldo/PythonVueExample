@@ -1,5 +1,5 @@
 <template>
-  <b-col lg="3" offset-lg="5">
+  <b-col lg="12">
     <b-alert variant="success" show>{{ message }}</b-alert>
     <br>
   </b-col>
@@ -7,6 +7,9 @@
 
 <script>
 export default {
-  props: ['message'],
+  props: ['message', 'showMessage'],
+  created() {
+    setTimeout(() => this.$emit('update:showMessage', false), 5000);
+  }
 };
 </script>

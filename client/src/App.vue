@@ -11,7 +11,7 @@ export default {
 </script>
 
 <style>
-#app {
-  margin-top: 60px
+.container-fluid {
+  padding-top: 60px
 }
 </style>

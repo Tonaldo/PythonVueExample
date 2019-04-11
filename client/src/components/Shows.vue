@@ -8,7 +8,7 @@
         <button type="button" class="btn btn-success btn-sm" v-b-modal.show-modal>Add TV show</button>
 
         <button type="button" class="btn btn-info btn-sm" @click="changeView()">List/poster mode</button>
-        <button v-if="!watchlist" type="button" class="btn btn-primary float-right btn-sm" @click="toggleWatchlist()">{{ !this.watchList ? 'Show watchlist' : 'Show all my shows' }}</button>
+        <button v-if="!watchlist" type="button" class="btn btn-primary float-right btn-sm " @click="toggleWatchlist()">{{ !this.watchList ? 'Show watchlist' : 'Show all my shows' }}</button>
         <br><br>
         <table  v-if="listMode  && !watchlist " class="table table-hover">
           <thead>
@@ -44,13 +44,13 @@
 
                    <button v-if="!show.watchlist"
                         type="button"
-                        class="btn btn-outline-primary btn-sm"
+                        class="btn btn-outline-primary btn-sm watchListTableBtn"
                         @click="onAddWatchlistShow(show)">
                     Watchlist
                 </button>
                      <button v-if="show.watchlist"
                         type="button"
-                        class="btn btn-outline-primary btn-sm"
+                        class="btn btn-outline-primary btn-sm watchListTableBtn"
                         @click="onWatchlistDelete(show)">
                     Remove from watchlist
                 </button>
@@ -114,7 +114,7 @@
              </b-form-checkbox-group>
         </b-form-group>
         <b-button type="submit" variant="primary">Submit</b-button>
-        <b-button type="reset" variant="danger">Reset</b-button>
+        <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
     <b-modal ref="editShowModal"
@@ -208,36 +208,35 @@ export default {
   
   computed: {
  
- showsSorted: function() {
-     if(this.watchList === true) {
-      this.watchListShows = this.shows.filter((show) => show.watchlist === true)
-      return _.orderBy(this.watchListShows, this.sortKey, this.sortOrder);
+     showsSorted: function() {
+         if(this.watchList === true) {
+          this.watchListShows = this.shows.filter((show) => show.watchlist === true)
+          return _.orderBy(this.watchListShows, this.sortKey, this.sortOrder);
+        }
+        else {
+          return _.orderBy(this.allShows, this.sortKey, this.sortOrder);
+        
+        }
     }
-    else {
-      return _.orderBy(this.allShows, this.sortKey, this.sortOrder);
-    
-    }
-   
-}
 },
 
   methods: {
 
- sortBy: function(key) {
-        if (key == this.sortKey) {
-            this.sortOrder = (this.sortOrder == 'asc') ? 'desc' : 'asc';
-        } else {
-            this.sortKey = key;
-            this.sortOrder = 'asc';
-        }
-   },
+    sortBy: function(key) {
+      if (key == this.sortKey) {
+        this.sortOrder = (this.sortOrder == 'asc') ? 'desc' : 'asc';
+      } else {
+        this.sortKey = key;
+        this.sortOrder = 'asc';
+      }
+     },
 
-   changeView: function() {
-    this.listMode = !this.listMode
-   },
-   toggleWatchlist: function() {
-    this.watchList = !this.watchList
-   },
+    changeView: function() {
+      this.listMode = !this.listMode
+    },
+    toggleWatchlist: function() {
+      this.watchList = !this.watchList
+    },
 
     getShows() {
       const path = 'https://pythonvueapi.herokuapp.com/shows';
@@ -311,22 +310,23 @@ export default {
         }); 
     },
 
-      RemoveWatchlistShow(showID) {
-       const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
-       let payload = {};
-       payload.watchlist = false;
-       axios.put(path, payload)
-        .then(() => {
-          this.getShows();
-          this.message = 'Show removed from watchlist!';
-          this.showMessage = true;
-        })
-        .catch((error) => {
-          // eslint-disable-next-line
-          console.error(error);
-          this.getShows();
-        }); 
+    RemoveWatchlistShow(showID) {
+     const path = `https://pythonvueapi.herokuapp.com/shows/${showID}`;
+     let payload = {};
+     payload.watchlist = false;
+     axios.put(path, payload)
+      .then(() => {
+        this.getShows();
+        this.message = 'Show removed from watchlist!';
+        this.showMessage = true;
+      })
+      .catch((error) => {
+        // eslint-disable-next-line
+        console.error(error);
+        this.getShows();
+      }); 
     },
+
     initForm() {
       this.addShowForm.title = '';
       this.addShowForm.year = '';
@@ -340,7 +340,6 @@ export default {
       this.editForm.watched = [];
       this.editForm.watchlist = [];
       this.editForm.watchlist = [];
-
     },
     onSubmit(evt) {
       evt.preventDefault();
@@ -395,6 +394,7 @@ export default {
       this.editForm = show;
     },
   },
+  
   created() {
     this.getShows();
   },

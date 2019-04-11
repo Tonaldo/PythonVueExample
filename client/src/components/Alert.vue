@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <b-col lg="3" offset-lg="5">
     <b-alert variant="success" show>{{ message }}</b-alert>
     <br>
-  </div>
+  </b-col>
 </template>
 
 <script>
